@@ -41,11 +41,22 @@ class ToolExecutor:
     
     @staticmethod
     def execute_python(code: str) -> Dict[str, Any]:
-        """Safely execute Python code"""
+        """Safely execute Python code and capture printed output"""
+        import io
+        import contextlib
         try:
-            exec_globals = {}
-            exec(code, exec_globals)
-            return {'success': True, 'output': 'Code executed successfully', 'globals': str(exec_globals)}
+            exec_globals: Dict[str, Any] = {}
+            stdout_capture = io.StringIO()
+            stderr_capture = io.StringIO()
+            with contextlib.redirect_stdout(stdout_capture), contextlib.redirect_stderr(stderr_capture):
+                exec(code, exec_globals)  # noqa: S102
+            output = stdout_capture.getvalue()
+            err    = stderr_capture.getvalue()
+            return {
+                'success': True,
+                'output': output or '(no output)',
+                'stderr': err if err else None,
+            }
         except Exception as e:
             return {'success': False, 'error': str(e)}
     
